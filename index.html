@@ -174,27 +174,39 @@ tr.invtot:hover td{background:#e2ebfa}
 @media (max-width:640px){
   body{padding:0}
   .window{height:100dvh;max-height:none;border-radius:0;border:0}
-  .titlebar{height:auto;padding:7px 8px}
-  .titlebar .t{font-size:13px}.titlebar .s{max-width:92vw}
-  .sectionbar{padding:9px 10px 0;gap:7px}
-  .bigseg{width:100%;justify-content:flex-start;overflow-x:auto}
-  .bigseg button{padding:8px 13px;font-size:13px}
-  .cloudbar{order:3;width:100%;flex-wrap:wrap}
-  .slotinput{flex:1 1 120px;width:auto}
-  .cloudbar .btn{flex:1 1 auto;justify-content:center}
-  .sectionbar .btn[for=file], label.btn[for=file]{order:2}
-  .toolbar{padding:9px 10px;gap:8px}
+  .titlebar{height:auto;padding:5px 8px}
+  .titlebar .t{font-size:12.5px}.titlebar .s{font-size:10px;max-width:92vw}
+  .sectionbar{padding:7px 8px 0;gap:6px}
+  .bigseg{width:100%;justify-content:flex-start;overflow-x:auto;padding:2px}
+  .bigseg button{padding:6px 11px;font-size:12.5px}
+  .bigseg .ic{font-size:13px}
+  .cloudbar{order:3;width:100%;flex-wrap:wrap;gap:6px}
+  .cloudlbl{display:none}
+  .slotinput{flex:1 1 110px;width:auto;padding:5px 8px}
+  .cloudbar .btn{flex:1 1 auto;justify-content:center;padding:6px 10px;font-size:12px}
+  label.btn[for=file]{order:2;padding:6px 12px;font-size:12.5px}
+  .toolbar{padding:7px 8px;gap:6px}
   .seg{max-width:100%;overflow-x:auto}
+  .seg button{padding:5px 11px;font-size:12px}
   #monthTabs{max-width:100%}
-  .search{order:5}.search input{width:100%}
-  .searchWrap,#searchWrap{flex:1 1 140px}
-  .stats{gap:7px;padding:11px 10px 2px}
-  .card{min-width:calc(50% - 4px);padding:9px 11px}
-  .card .val{font-size:18px}
-  .mcap,.invwarn,.sumwarn,.colorbar{margin-left:10px;margin-right:10px}
-  .tablewrap,.chartpane{margin:9px 10px 0}
+  #searchWrap{flex:1 1 130px}.search input{width:100%;padding:5px 9px 5px 26px}
+  #printBtn,#editBtn,#xlsxBtn{padding:6px 10px;font-size:12px}
+  /* compact summary cards — single scrollable row to save height */
+  .stats{gap:6px;padding:8px 8px 2px;flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory}
+  .card{flex:0 0 47%;min-width:47%;scroll-snap-align:start;padding:7px 10px;border-radius:9px}
+  .card .lab{font-size:10px}
+  .card .val{font-size:16px;margin-top:1px}
+  .card .sub{font-size:9px}
+  .mcap{margin:7px 8px 0;padding:7px 11px;font-size:12px}
+  .mcap .pill{font-size:10px;padding:1px 8px}
+  .invwarn,.sumwarn{margin:7px 8px 0;padding:8px 11px;font-size:11px}
+  .colorbar{margin:7px 8px 0;padding:7px 10px;gap:9px}
+  /* give the graph / table the remaining space */
+  .tablewrap,.chartpane{margin:7px 8px 0}
   .bar-row .lbl{font-size:10px}.bar-row .vt{font-size:9px}
-  .foot{padding:8px 10px 11px;flex-wrap:wrap;gap:5px}
+  .legend{font-size:11px;padding:6px 10px 3px;gap:10px}
+  .foot{padding:7px 8px 10px;flex-wrap:wrap;gap:5px;font-size:10px}
+  .modal-card{width:min(94vw,360px)}
 }
 @media print{
  html,body{height:auto}
