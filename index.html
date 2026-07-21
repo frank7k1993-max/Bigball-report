@@ -171,7 +171,31 @@ tr.invtot:hover td{background:#e2ebfa}
 ::-webkit-scrollbar{width:11px;height:11px}
 ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:6px;border:3px solid transparent;background-clip:content-box}
 ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.34);background-clip:content-box}
-@media (max-width:640px){body{padding:0}.window{height:100vh;max-height:none;border-radius:0;border:0}.card .val{font-size:19px}}
+@media (max-width:640px){
+  body{padding:0}
+  .window{height:100dvh;max-height:none;border-radius:0;border:0}
+  .titlebar{height:auto;padding:7px 8px}
+  .titlebar .t{font-size:13px}.titlebar .s{max-width:92vw}
+  .sectionbar{padding:9px 10px 0;gap:7px}
+  .bigseg{width:100%;justify-content:flex-start;overflow-x:auto}
+  .bigseg button{padding:8px 13px;font-size:13px}
+  .cloudbar{order:3;width:100%;flex-wrap:wrap}
+  .slotinput{flex:1 1 120px;width:auto}
+  .cloudbar .btn{flex:1 1 auto;justify-content:center}
+  .sectionbar .btn[for=file], label.btn[for=file]{order:2}
+  .toolbar{padding:9px 10px;gap:8px}
+  .seg{max-width:100%;overflow-x:auto}
+  #monthTabs{max-width:100%}
+  .search{order:5}.search input{width:100%}
+  .searchWrap,#searchWrap{flex:1 1 140px}
+  .stats{gap:7px;padding:11px 10px 2px}
+  .card{min-width:calc(50% - 4px);padding:9px 11px}
+  .card .val{font-size:18px}
+  .mcap,.invwarn,.sumwarn,.colorbar{margin-left:10px;margin-right:10px}
+  .tablewrap,.chartpane{margin:9px 10px 0}
+  .bar-row .lbl{font-size:10px}.bar-row .vt{font-size:9px}
+  .foot{padding:8px 10px 11px;flex-wrap:wrap;gap:5px}
+}
 @media print{
  html,body{height:auto}
  body{background:#fff;display:block;padding:0}
@@ -1238,6 +1262,7 @@ document.getElementById('clearSaved').onclick=()=>{
   activeSection=(su.activeSection!=null&&su.activeSection<SECTIONS.length)?su.activeSection:0;
   SECTION_WORD=SECTIONS[activeSection].word||SECTIONS[activeSection].key; PRODUCTS=SECTIONS[activeSection].products;
   activeProd=(su.activeProd!=null&&su.activeProd<PRODUCTS.length)?su.activeProd:0;
+  mode = (window.matchMedia && window.matchMedia('(max-width:640px)').matches) ? 'chart' : 'table';
   renderSectionTabs(); renderProdTabs(); loadProduct(activeProd);
   const info=document.getElementById('saveInfo'), clr=document.getElementById('clearSaved');
   info.textContent=LS_OK?(FILE_NAME?('💾 บันทึกไว้ในเครื่อง · '+FILE_NAME):'💾 บันทึกอัตโนมัติในเครื่องนี้'):'⚠️ เบราว์เซอร์นี้บันทึกไม่ได้';
