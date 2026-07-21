@@ -268,6 +268,10 @@ tr.invtot:hover td{background:#e2ebfa}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14a4 4 0 0 1 .9-7.9 5 5 0 0 1 9.7-1.6A4.5 4.5 0 0 1 18 14"/><path d="M12 19v-7"/><path d="M9 15l3-3 3 3"/></svg>
         โหลดออนไลน์
       </button>
+      <button class="btn ghost" id="cloudTrashBtn" title="ถังขยะ — กู้คืนงานที่ลบ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>
+        ถังขยะ
+      </button>
     </div>
     <label class="btn" for="file">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 16V4"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>
@@ -469,7 +473,7 @@ async function cloudSave(){
     const db=getDB(); const slot=slotName();
     if(btn){ btn.disabled=true; btn.classList.add('busy'); }
     toast('กำลังบันทึกออนไลน์…');
-    const row={ id:slot, data:SECTIONS, colors:COLORMAP, file_name:FILE_NAME||'', updated_by:deviceLabel() };
+    const row={ id:slot, data:SECTIONS, colors:COLORMAP, file_name:FILE_NAME||'', updated_by:deviceLabel(), deleted_at:null };
     const {error}=await db.from('meatball_reports').upsert(row,{onConflict:'id'});
     if(error) throw error;
     lsSet('mbr_slot',slot);
@@ -480,7 +484,7 @@ async function cloudSave(){
 async function cloudLoad(){
   try{
     const db=getDB(); toast('กำลังดึงรายการจากออนไลน์…');
-    const {data,error}=await db.from('meatball_reports').select('id,file_name,updated_by,updated_at').order('updated_at',{ascending:false});
+    const {data,error}=await db.from('meatball_reports').select('id,file_name,updated_by,updated_at').is('deleted_at',null).order('updated_at',{ascending:false});
     if(error) throw error;
     if(!data||!data.length){ toast('ยังไม่มีข้อมูลออนไลน์','err'); return; }
     listModal('เลือกงานที่บันทึกไว้ (ออนไลน์)', data.map(r=>({
@@ -492,12 +496,43 @@ async function cloudLoad(){
   }catch(e){ console.error(e); toast('ดึงข้อมูลไม่สำเร็จ: '+sbErr(e),'err'); }
 }
 async function cloudDelete(slot){
-  confirmModal({ title:'ลบข้อมูลออนไลน์', okLabel:'ลบข้อมูล', okDanger:true,
-    msg:'ลบงาน <b>“'+esc(slot)+'”</b> ออกจากออนไลน์ถาวร?<br><span style="color:#86868b;font-size:12px">ลบเฉพาะบนคลาวด์ · ไม่กระทบข้อมูลในเครื่อง</span>',
+  confirmModal({ title:'ย้ายเข้าถังขยะ', okLabel:'ย้ายเข้าถังขยะ', okDanger:true,
+    msg:'ย้ายงาน <b>“'+esc(slot)+'”</b> เข้าถังขยะ?<br><span style="color:#86868b;font-size:12px">ยังไม่หายจริง · กู้คืนได้จากปุ่ม 🗑 ถังขยะ</span>',
     onOk:async ()=>{
-      try{ const db=getDB(); toast('กำลังลบ…');
+      try{ const db=getDB(); toast('กำลังย้ายเข้าถังขยะ…');
+        const {error}=await db.from('meatball_reports').update({deleted_at:new Date().toISOString()}).eq('id',slot); if(error) throw error;
+        toast('ย้ายเข้าถังขยะแล้ว 🗑  ('+slot+')','ok'); setTimeout(cloudLoad,300);
+      }catch(e){ console.error(e); toast('ลบไม่สำเร็จ: '+sbErr(e),'err'); }
+    }});
+}
+async function cloudTrash(){
+  try{
+    const db=getDB(); toast('กำลังเปิดถังขยะ…');
+    const {data,error}=await db.from('meatball_reports').select('id,file_name,updated_by,deleted_at').not('deleted_at','is',null).order('deleted_at',{ascending:false});
+    if(error) throw error;
+    if(!data||!data.length){ toast('ถังขยะว่างเปล่า','ok'); return; }
+    listModal('🗑 ถังขยะ — แตะเพื่อกู้คืน', data.map(r=>({
+      html:'<b>'+esc(r.id)+'</b><div style="font-size:11.5px;color:#86868b;margin-top:2px">'
+        +(r.file_name?esc(r.file_name)+' · ':'')+'ลบเมื่อ '+new Date(r.deleted_at).toLocaleString('th-TH')+'</div>'
+        +'<div style="font-size:11px;color:#1a7f4b;margin-top:3px">♻️ แตะเพื่อกู้คืน</div>',
+      onClick:()=>cloudRestore(r.id),
+      onDelete:()=>cloudPurge(r.id)
+    })));
+  }catch(e){ console.error(e); toast('เปิดถังขยะไม่สำเร็จ: '+sbErr(e),'err'); }
+}
+async function cloudRestore(slot){
+  try{ const db=getDB(); toast('กำลังกู้คืน…');
+    const {error}=await db.from('meatball_reports').update({deleted_at:null}).eq('id',slot); if(error) throw error;
+    toast('กู้คืนแล้ว ♻️  ('+slot+')','ok'); setTimeout(cloudTrash,300);
+  }catch(e){ console.error(e); toast('กู้คืนไม่สำเร็จ: '+sbErr(e),'err'); }
+}
+async function cloudPurge(slot){
+  confirmModal({ title:'ลบถาวร', okLabel:'ลบถาวร', okDanger:true,
+    msg:'ลบงาน <b>“'+esc(slot)+'”</b> ออกถาวร?<br><span style="color:#c0392b;font-size:12px">การลบถาวรกู้คืนไม่ได้อีก</span>',
+    onOk:async ()=>{
+      try{ const db=getDB(); toast('กำลังลบถาวร…');
         const {error}=await db.from('meatball_reports').delete().eq('id',slot); if(error) throw error;
-        toast('ลบออนไลน์แล้ว ✅  ('+slot+')','ok'); setTimeout(cloudLoad,300);
+        toast('ลบถาวรแล้ว  ('+slot+')','ok'); setTimeout(cloudTrash,300);
       }catch(e){ console.error(e); toast('ลบไม่สำเร็จ: '+sbErr(e),'err'); }
     }});
 }
@@ -1245,6 +1280,7 @@ function buildSections(wb){
 }
 document.getElementById('cloudSaveBtn').onclick=cloudSave;
 document.getElementById('cloudLoadBtn').onclick=cloudLoad;
+document.getElementById('cloudTrashBtn').onclick=cloudTrash;
 document.getElementById('colorJsonFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) importColorsJson(f); e.target.value=''; });
 document.getElementById('file').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
