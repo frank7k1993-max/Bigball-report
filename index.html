@@ -107,6 +107,10 @@ tbody.editing tr.delrow:hover td.c-no{background:#ffe3e3;color:#d64545}
 .mlist-item{font:inherit;text-align:left;background:#f5f7fa;border:1px solid var(--line);border-radius:10px;padding:10px 13px;cursor:pointer;color:var(--ink);transition:background .12s,border-color .12s}
 .mlist-item:hover{background:#eaf1ff;border-color:var(--tot-line)}
 .mlist-item b{font-size:14px}
+.mlist-row{display:flex;gap:7px;align-items:stretch}
+.mlist-row .mlist-item{flex:1}
+.mlist-del{flex:0 0 auto;width:42px;border:1px solid #f0c9c9;background:#fdecec;color:#d64545;border-radius:10px;cursor:pointer;font-size:15px}
+.mlist-del:hover{background:#f9dada}
 .invwarn .pair{display:inline-block;background:#fff;border:1px solid #e2c869;border-radius:6px;padding:1px 8px;margin:2px 5px 2px 0;font-weight:600;font-family:ui-monospace,Menlo,Consolas,monospace}
 .tablewrap{flex:1 1 auto;overflow:auto;margin:10px 16px 0;border:1px solid var(--line);border-radius:12px;background:#fff}
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:12px}
@@ -425,9 +429,20 @@ async function cloudLoad(){
     listModal('เลือกงานที่บันทึกไว้ (ออนไลน์)', data.map(r=>({
       html:'<b>'+esc(r.id)+'</b><div style="font-size:11.5px;color:#86868b;margin-top:2px">'
         +(r.file_name?esc(r.file_name)+' · ':'')+esc(r.updated_by||'')+' · '+new Date(r.updated_at).toLocaleString('th-TH')+'</div>',
-      onClick:()=>cloudApply(r.id)
+      onClick:()=>cloudApply(r.id),
+      onDelete:()=>cloudDelete(r.id)
     })));
   }catch(e){ console.error(e); toast('ดึงข้อมูลไม่สำเร็จ: '+sbErr(e),'err'); }
+}
+async function cloudDelete(slot){
+  confirmModal({ title:'ลบข้อมูลออนไลน์', okLabel:'ลบข้อมูล', okDanger:true,
+    msg:'ลบงาน <b>“'+esc(slot)+'”</b> ออกจากออนไลน์ถาวร?<br><span style="color:#86868b;font-size:12px">ลบเฉพาะบนคลาวด์ · ไม่กระทบข้อมูลในเครื่อง</span>',
+    onOk:async ()=>{
+      try{ const db=getDB(); toast('กำลังลบ…');
+        const {error}=await db.from('meatball_reports').delete().eq('id',slot); if(error) throw error;
+        toast('ลบออนไลน์แล้ว ✅  ('+slot+')','ok'); setTimeout(cloudLoad,300);
+      }catch(e){ console.error(e); toast('ลบไม่สำเร็จ: '+sbErr(e),'err'); }
+    }});
 }
 async function cloudApply(slot){
   try{
@@ -448,13 +463,17 @@ async function cloudApply(slot){
 function listModal(title,items){
   const m=document.getElementById('modal');
   document.getElementById('modalTitle').textContent=title;
-  document.getElementById('modalMsg').innerHTML='<div class="modal-list">'+items.map((it,i)=>'<button class="mlist-item" data-i="'+i+'">'+it.html+'</button>').join('')+'</div>';
+  document.getElementById('modalMsg').innerHTML='<div class="modal-list">'+items.map((it,i)=>
+    '<div class="mlist-row"><button class="mlist-item" data-i="'+i+'">'+it.html+'</button>'
+    +(it.onDelete?'<button class="mlist-del" data-del="'+i+'" title="ลบออกจากออนไลน์">🗑</button>':'')+'</div>').join('')+'</div>';
   const ok=document.getElementById('modalOk'), cancel=document.getElementById('modalCancel');
   ok.style.display='none'; cancel.textContent='ปิด';
   m.classList.remove('hidden'); requestAnimationFrame(()=>m.classList.add('show'));
   const close=()=>{ m.classList.remove('show'); setTimeout(()=>{ m.classList.add('hidden'); ok.style.display=''; },170); cancel.onclick=null; m.onclick=null; document.removeEventListener('keydown',onKey); };
   const onKey=e=>{ if(e.key==='Escape') close(); };
-  document.getElementById('modalMsg').querySelectorAll('.mlist-item').forEach(btn=>btn.onclick=()=>{ close(); items[+btn.dataset.i].onClick(); });
+  const msg=document.getElementById('modalMsg');
+  msg.querySelectorAll('.mlist-item').forEach(btn=>btn.onclick=()=>{ close(); items[+btn.dataset.i].onClick(); });
+  msg.querySelectorAll('.mlist-del').forEach(btn=>btn.onclick=(ev)=>{ ev.stopPropagation(); close(); items[+btn.dataset.del].onDelete(); });
   cancel.onclick=close; m.onclick=e=>{ if(e.target===m) close(); };
   document.addEventListener('keydown',onKey);
 }
@@ -759,16 +778,8 @@ function renderColorBar(){
       ? [{label:monthLabel(BLOCKS[+document.getElementById('cmpA').value].title),ci:0},{label:monthLabel(BLOCKS[+document.getElementById('cmpB').value].title),ci:1}]
       : BLOCKS.map((b,i)=>({label:monthLabel(b.title),ci:i%COLORS.length})));
   el.innerHTML='<span class="clbl">🎨 สีกราฟ</span>'+items.map(it=>
-    '<label class="cchip"><input type="color" value="'+COLORS[it.ci]+'" data-ci="'+it.ci+'"><span>'+esc(it.label)+'</span></label>').join('')
-    +'<button class="creset" id="colorSaveFile" style="margin-left:auto">💾 ฝังสีลงไฟล์ (แจกทุกเครื่อง)</button>'
-    +'<button class="creset" id="colorSaveJson" style="margin-left:14px" title="ดาวน์โหลดไฟล์ .json ของสีทั้งหมด ไปเปิดที่เครื่องอื่น">⬇ เซฟสี</button>'
-    +'<button class="creset" id="colorLoadJson" style="margin-left:14px" title="โหลดไฟล์ .json สีจากเครื่องอื่น">⬆ โหลดสี</button>'
-    +'<button class="creset" id="colorReset" style="margin-left:14px">รีเซ็ตสี</button>';
+    '<label class="cchip"><input type="color" value="'+COLORS[it.ci]+'" data-ci="'+it.ci+'"><span>'+esc(it.label)+'</span></label>').join('');
   el.querySelectorAll('input[type=color]').forEach(inp=>inp.oninput=e=>{ COLORS[+e.target.dataset.ci]=e.target.value; drawChart(); saveColors(); });
-  document.getElementById('colorReset').onclick=()=>{ resetColors(); renderColorBar(); drawChart(); saveColors(); };
-  document.getElementById('colorSaveFile').onclick=saveColorsToFile;
-  document.getElementById('colorSaveJson').onclick=exportColorsJson;
-  document.getElementById('colorLoadJson').onclick=()=>document.getElementById('colorJsonFile').click();
 }
 function exportColorsJson(){
   try{
